@@ -113,7 +113,7 @@ jobs:
           echo "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" | npx wrangler secret put CF_ACCOUNT_ID --name "$WORKER"
           echo "true" | npx wrangler secret put DEV_MODE --name "$WORKER"
 
-      - name: Get worker URL and set Telegram webhook
+      - name: Get worker URL and configure
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -136,13 +136,13 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{"enabled": true}'
 
-          # Set Telegram webhook
+          # Set WORKER_URL secret so OpenClaw knows its public URL
+          echo "$WORKER_URL" | npx wrangler secret put WORKER_URL --name "$WORKER"
+
+          # Delete any existing Telegram webhook - OpenClaw uses long polling
           BOT_TOKEN="${{ github.event.inputs.telegram_bot_token }}"
-          WEBHOOK_URL="${WORKER_URL}/webhook/telegram"
-          RESULT=$(curl -s "https://api.telegram.org/bot${BOT_TOKEN}/setWebhook" \
-            -H "Content-Type: application/json" \
-            -d "{\"url\": \"${WEBHOOK_URL}\"}")
-          echo "Telegram webhook result: $RESULT"
+          curl -s "https://api.telegram.org/bot${BOT_TOKEN}/deleteWebhook"
+          echo "Telegram webhook deleted (OpenClaw uses long polling)"
 
       - name: Callback to Supabase - Success
         if: success()
