@@ -24,6 +24,9 @@ on:
       callback_secret:
         description: "Shared secret for authenticating callback"
         required: true
+      telegram_owner_id:
+        description: "Telegram user ID of the bot owner"
+        required: true
 
 jobs:
   deploy:
@@ -92,6 +95,9 @@ jobs:
           echo "${{ github.event.inputs.gateway_token }}" | npx wrangler secret put MOLTBOT_GATEWAY_TOKEN --name "$WORKER"
           echo "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" | npx wrangler secret put CF_ACCOUNT_ID --name "$WORKER"
           echo "true" | npx wrangler secret put DEV_MODE --name "$WORKER"
+          echo "true" | npx wrangler secret put DEBUG_ROUTES --name "$WORKER"
+          echo "open" | npx wrangler secret put TELEGRAM_DM_POLICY --name "$WORKER"
+          echo "${{ github.event.inputs.telegram_owner_id }}" | npx wrangler secret put TELEGRAM_DM_ALLOW_FROM --name "$WORKER"
 
       - name: Get worker URL and configure
         env:
