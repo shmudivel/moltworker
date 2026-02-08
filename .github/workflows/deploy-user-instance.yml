@@ -130,6 +130,46 @@ jobs:
           curl -s "https://api.telegram.org/bot${BOT_TOKEN}/deleteWebhook"
           echo "Telegram webhook deleted (OpenClaw uses long polling)"
 
+      - name: Wait for container and restart gateway
+        run: |
+          WORKER_URL="${{ env.WORKER_URL }}"
+          echo "Waiting for container to initialize..."
+
+          # Wait for sandbox to be ready (retry up to 12 times, 10s apart = 2 min)
+          for i in $(seq 1 12); do
+            HEALTH=$(curl -s -m 10 "$WORKER_URL/sandbox-health" 2>/dev/null || echo "")
+            if echo "$HEALTH" | grep -q '"status":"ok"'; then
+              echo "Sandbox is ready (attempt $i)"
+              break
+            fi
+            echo "Waiting for sandbox... (attempt $i/12)"
+            sleep 10
+          done
+
+          # Restart gateway to trigger OpenClaw startup
+          echo "Restarting gateway..."
+          for i in $(seq 1 6); do
+            RESTART=$(curl -s -m 30 -X POST "$WORKER_URL/api/admin/gateway/restart" 2>/dev/null || echo "")
+            if echo "$RESTART" | grep -q '"success":true'; then
+              echo "Gateway restart triggered: $RESTART"
+              break
+            fi
+            echo "Retry gateway restart... (attempt $i/6)"
+            sleep 10
+          done
+
+          # Wait for gateway to boot
+          echo "Waiting for gateway to start..."
+          for i in $(seq 1 12); do
+            STATUS=$(curl -s -m 10 "$WORKER_URL/api/status" 2>/dev/null || echo "")
+            if echo "$STATUS" | grep -q '"status":"running"'; then
+              echo "Gateway is running!"
+              break
+            fi
+            echo "Waiting for gateway... (attempt $i/12)"
+            sleep 10
+          done
+
       - name: Callback to Supabase - Success
         if: success()
         run: |
