@@ -99,6 +99,14 @@ jobs:
           echo "pairing" | npx wrangler secret put TELEGRAM_DM_POLICY --name "$WORKER"
           echo "${{ github.event.inputs.telegram_owner_id }}" | npx wrangler secret put TELEGRAM_DM_ALLOW_FROM --name "$WORKER"
 
+          # Container sleep — saves ~$28/mo by sleeping after 10 min idle
+          echo "10m" | npx wrangler secret put SANDBOX_SLEEP_AFTER --name "$WORKER"
+
+          # AI Gateway — route through CF AI Gateway for caching (keeps Opus for best performance)
+          echo "${{ secrets.CLOUDFLARE_AI_GATEWAY_API_KEY }}" | npx wrangler secret put CLOUDFLARE_AI_GATEWAY_API_KEY --name "$WORKER"
+          echo "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" | npx wrangler secret put CF_AI_GATEWAY_ACCOUNT_ID --name "$WORKER"
+          echo "${{ secrets.CF_AI_GATEWAY_GATEWAY_ID }}" | npx wrangler secret put CF_AI_GATEWAY_GATEWAY_ID --name "$WORKER"
+
       - name: Get worker URL and configure
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
