@@ -255,26 +255,32 @@ if (process.env.CF_AI_GATEWAY_MODEL) {
 // that would fail OpenClaw's strict config validation (see #47)
 if (process.env.TELEGRAM_BOT_TOKEN) {
     const dmPolicy = process.env.TELEGRAM_DM_POLICY || 'pairing';
-    config.channels.telegram = {
+
+    // Build base config
+    const telegramConfig = {
         botToken: process.env.TELEGRAM_BOT_TOKEN,
-        enabled: true,
         dmPolicy: dmPolicy,
     };
+
+    // Add allowFrom
     if (process.env.TELEGRAM_DM_ALLOW_FROM) {
-        config.channels.telegram.allowFrom = process.env.TELEGRAM_DM_ALLOW_FROM.split(',');
+        telegramConfig.allowFrom = process.env.TELEGRAM_DM_ALLOW_FROM.split(',');
     } else if (dmPolicy === 'open') {
-        config.channels.telegram.allowFrom = ['*'];
+        telegramConfig.allowFrom = ['*'];
     }
+
     // Webhook mode (preferred for Cloudflare Workers - enables container sleep)
-    // If webhookUrl is set, OpenClaw uses webhook instead of long polling
     if (process.env.WORKER_URL && process.env.TELEGRAM_WEBHOOK_SECRET) {
-        config.channels.telegram.webhookUrl = process.env.WORKER_URL + '/telegram-webhook';
-        config.channels.telegram.webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
-        config.channels.telegram.webhookPath = '/telegram-webhook';
-        console.log('Telegram webhook mode enabled: ' + config.channels.telegram.webhookUrl);
+        telegramConfig.webhookUrl = process.env.WORKER_URL + '/telegram-webhook';
+        telegramConfig.webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
+        console.log('Telegram webhook mode: ' + telegramConfig.webhookUrl);
     } else {
-        console.log('Telegram long polling mode (webhook disabled - container cannot sleep)');
+        console.log('Telegram polling mode');
     }
+
+    // Set config (enabled is implicit when channel exists)
+    config.channels = config.channels || {};
+    config.channels.telegram = telegramConfig;
 }
 
 // Discord configuration
