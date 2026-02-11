@@ -102,6 +102,11 @@ jobs:
           echo "10m" | npx wrangler secret put SANDBOX_SLEEP_AFTER --name "$WORKER"
           echo "anthropic/claude-sonnet-4-5" | npx wrangler secret put OPENCLAW_DEFAULT_MODEL --name "$WORKER"
 
+          # Generate random webhook secret (32 chars hex)
+          WEBHOOK_SECRET=$(openssl rand -hex 32)
+          echo "$WEBHOOK_SECRET" | npx wrangler secret put TELEGRAM_WEBHOOK_SECRET --name "$WORKER"
+          echo "TELEGRAM_WEBHOOK_SECRET=$WEBHOOK_SECRET" >> $GITHUB_ENV
+
       - name: Get worker URL and configure
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -128,10 +133,15 @@ jobs:
           # Set WORKER_URL secret so OpenClaw knows its public URL
           echo "$WORKER_URL" | npx wrangler secret put WORKER_URL --name "$WORKER"
 
-          # Delete any existing Telegram webhook - OpenClaw uses long polling
+          # Set Telegram webhook (enables container sleep)
           BOT_TOKEN="${{ github.event.inputs.telegram_bot_token }}"
-          curl -s "https://api.telegram.org/bot${BOT_TOKEN}/deleteWebhook"
-          echo "Telegram webhook deleted (OpenClaw uses long polling)"
+          WEBHOOK_URL="${WORKER_URL}/telegram-webhook"
+
+          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/setWebhook" \
+            -H "Content-Type: application/json" \
+            -d "{\"url\": \"${WEBHOOK_URL}\", \"secret_token\": \"${TELEGRAM_WEBHOOK_SECRET}\"}"
+
+          echo "Telegram webhook configured: $WEBHOOK_URL"
 
       - name: Wait for container and restart gateway
         run: |

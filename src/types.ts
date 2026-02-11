@@ -28,6 +28,7 @@ export interface MoltbotEnv {
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_DM_POLICY?: string;
   TELEGRAM_DM_ALLOW_FROM?: string;
+  TELEGRAM_WEBHOOK_SECRET?: string; // Secret token for webhook authentication
   DISCORD_BOT_TOKEN?: string;
   DISCORD_DM_POLICY?: string;
   SLACK_BOT_TOKEN?: string;

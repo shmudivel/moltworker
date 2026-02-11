@@ -265,6 +265,16 @@ if (process.env.TELEGRAM_BOT_TOKEN) {
     } else if (dmPolicy === 'open') {
         config.channels.telegram.allowFrom = ['*'];
     }
+    // Webhook mode (preferred for Cloudflare Workers - enables container sleep)
+    // If webhookUrl is set, OpenClaw uses webhook instead of long polling
+    if (process.env.WORKER_URL && process.env.TELEGRAM_WEBHOOK_SECRET) {
+        config.channels.telegram.webhookUrl = process.env.WORKER_URL + '/telegram-webhook';
+        config.channels.telegram.webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
+        config.channels.telegram.webhookPath = '/telegram-webhook';
+        console.log('Telegram webhook mode enabled: ' + config.channels.telegram.webhookUrl);
+    } else {
+        console.log('Telegram long polling mode (webhook disabled - container cannot sleep)');
+    }
 }
 
 // Discord configuration
