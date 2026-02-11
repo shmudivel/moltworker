@@ -94,6 +94,7 @@ jobs:
           echo "${{ github.event.inputs.telegram_bot_token }}" | npx wrangler secret put TELEGRAM_BOT_TOKEN --name "$WORKER"
           echo "${{ github.event.inputs.gateway_token }}" | npx wrangler secret put MOLTBOT_GATEWAY_TOKEN --name "$WORKER"
           echo "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" | npx wrangler secret put CF_ACCOUNT_ID --name "$WORKER"
+          echo "${{ secrets.OPENAI_API_KEY }}" | npx wrangler secret put OPENAI_API_KEY --name "$WORKER"
           echo "true" | npx wrangler secret put DEV_MODE --name "$WORKER"
           echo "true" | npx wrangler secret put DEBUG_ROUTES --name "$WORKER"
           echo "pairing" | npx wrangler secret put TELEGRAM_DM_POLICY --name "$WORKER"
