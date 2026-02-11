@@ -189,6 +189,17 @@ if (process.env.OPENCLAW_DEV_MODE === 'true') {
     config.gateway.controlUi.allowInsecureAuth = true;
 }
 
+// Direct model override (OPENCLAW_DEFAULT_MODEL=provider/model-id)
+// Sets the default model without requiring AI Gateway setup
+// Example: anthropic/claude-sonnet-4-5
+if (process.env.OPENCLAW_DEFAULT_MODEL) {
+    const raw = process.env.OPENCLAW_DEFAULT_MODEL;
+    config.agents = config.agents || {};
+    config.agents.defaults = config.agents.defaults || {};
+    config.agents.defaults.model = { primary: raw };
+    console.log('Default model override: ' + raw);
+}
+
 // Legacy AI Gateway base URL override:
 // ANTHROPIC_BASE_URL is picked up natively by the Anthropic SDK,
 // so we don't need to patch the provider config. Writing a provider

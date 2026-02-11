@@ -99,6 +99,7 @@ jobs:
           echo "pairing" | npx wrangler secret put TELEGRAM_DM_POLICY --name "$WORKER"
           echo "${{ github.event.inputs.telegram_owner_id }}" | npx wrangler secret put TELEGRAM_DM_ALLOW_FROM --name "$WORKER"
           echo "10m" | npx wrangler secret put SANDBOX_SLEEP_AFTER --name "$WORKER"
+          echo "anthropic/claude-sonnet-4-5" | npx wrangler secret put OPENCLAW_DEFAULT_MODEL --name "$WORKER"
 
       - name: Get worker URL and configure
         env:
