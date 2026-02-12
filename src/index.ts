@@ -24,7 +24,7 @@ import { Hono } from 'hono';
 import { getSandbox, Sandbox, type SandboxOptions } from '@cloudflare/sandbox';
 
 import type { AppEnv, MoltbotEnv } from './types';
-import { MOLTBOT_PORT } from './config';
+import { MOLTBOT_PORT, TELEGRAM_WEBHOOK_PORT } from './config';
 import { createAccessMiddleware } from './auth';
 import { ensureMoltbotGateway, findExistingMoltbotProcess, syncToR2 } from './gateway';
 import { publicRoutes, api, adminUi, debug, cdp } from './routes';
@@ -150,6 +150,28 @@ app.route('/', publicRoutes);
 
 // Mount CDP routes (uses shared secret auth via query param, not CF Access)
 app.route('/cdp', cdp);
+
+// =============================================================================
+// TELEGRAM WEBHOOK: Routes to port 8787 (webhook listener), not gateway
+// =============================================================================
+
+app.post('/telegram-webhook', async (c) => {
+  const sandbox = c.get('sandbox');
+  console.log('[TELEGRAM-WEBHOOK] Received POST request, routing to webhook port 8787');
+
+  try {
+    // Ensure gateway is running (which also starts the webhook listener)
+    await ensureMoltbotGateway(sandbox, c.env);
+
+    // Proxy to Telegram webhook listener on port 8787 (NOT gateway port 18789)
+    const response = await sandbox.containerFetch(c.req.raw, TELEGRAM_WEBHOOK_PORT);
+    console.log('[TELEGRAM-WEBHOOK] Proxied to port 8787, status:', response.status);
+    return response;
+  } catch (error) {
+    console.error('[TELEGRAM-WEBHOOK] Error proxying webhook:', error);
+    return c.json({ error: 'Failed to process webhook' }, 500);
+  }
+});
 
 // =============================================================================
 // PROTECTED ROUTES: Cloudflare Access authentication required
