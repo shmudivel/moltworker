@@ -474,9 +474,6 @@ app.all('*', async (c) => {
 /**
  * Scheduled handler for cron triggers.
  * Syncs moltbot config/state from container to R2 for persistence.
- *
- * IMPORTANT: Does NOT call findExistingMoltbotProcess() to avoid waking sleeping containers.
- * If the container is asleep, sync will fail gracefully without resetting the sleep timer.
  */
 async function scheduled(
   _event: ScheduledEvent,
@@ -486,22 +483,19 @@ async function scheduled(
   const options = buildSandboxOptions(env);
   const sandbox = getSandbox(env.Sandbox, 'moltbot', options);
 
-  // Skip process check to avoid waking sleeping containers
-  // syncToR2 will handle errors gracefully if container is not running
+  const gatewayProcess = await findExistingMoltbotProcess(sandbox);
+  if (!gatewayProcess) {
+    console.log('[cron] Gateway not running yet, skipping sync');
+    return;
+  }
+
   console.log('[cron] Starting backup sync to R2...');
+  const result = await syncToR2(sandbox, env);
 
-  try {
-    const result = await syncToR2(sandbox, env);
-
-    if (result.success) {
-      console.log('[cron] Backup sync completed successfully at', result.lastSync);
-    } else {
-      // Container might be sleeping - this is expected and OK
-      console.log('[cron] Backup sync skipped (container may be sleeping):', result.error);
-    }
-  } catch (error) {
-    // Container sleeping or not ready - this is expected and OK
-    console.log('[cron] Backup sync skipped (container not ready):', error);
+  if (result.success) {
+    console.log('[cron] Backup sync completed successfully at', result.lastSync);
+  } else {
+    console.error('[cron] Backup sync failed:', result.error, result.details || '');
   }
 }
 
