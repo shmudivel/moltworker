@@ -105,12 +105,17 @@ function validateRequiredEnv(env: MoltbotEnv): string[] {
 function buildSandboxOptions(env: MoltbotEnv): SandboxOptions {
   const sleepAfter = env.SANDBOX_SLEEP_AFTER?.toLowerCase() || 'never';
 
+  console.log(`[SANDBOX] SANDBOX_SLEEP_AFTER env var: "${env.SANDBOX_SLEEP_AFTER}"`);
+  console.log(`[SANDBOX] Resolved sleepAfter value: "${sleepAfter}"`);
+
   // 'never' means keep the container alive indefinitely
   if (sleepAfter === 'never') {
+    console.log('[SANDBOX] Using keepAlive: true (container will NOT sleep)');
     return { keepAlive: true };
   }
 
   // Otherwise, use the specified duration
+  console.log(`[SANDBOX] Using sleepAfter: "${sleepAfter}" (container will sleep after inactivity)`);
   return { sleepAfter };
 }
 
